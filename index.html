@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trash Sorter — Recycling Guide</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e1117;--surface:#161c28;--surface2:#1e2638;--border:#252e42;
+  --text:#dde3f0;--muted:#5a6580;--faint:#2a3348;
+  --blue:#3b82f6;--blue-bg:#0d1e3d;--blue-light:#93c5fd;
+  --green:#22c55e;--green-bg:#0d2d1a;--green-light:#86efac;
+  --amber:#f59e0b;--amber-bg:#2d1f06;--amber-light:#fcd34d;
+  --brown:#a16207;--brown-bg:#1f1506;--brown-light:#d97706;
+  --red:#ef4444;--red-bg:#2d0d0d;--red-light:#fca5a5;
+  --gray:#6b7280;--gray-bg:#18181b;--gray-light:#9ca3af;
+  --purple:#8b5cf6;
+  --r:12px;--r-sm:8px;--r-xs:6px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:4rem}
+
+/* ── HEADER ── */
+.site-header{text-align:center;padding:2.5rem 1rem 1.5rem}
+.site-header h1{font-size:2.2rem;font-weight:800;letter-spacing:-1px;background:linear-gradient(120deg,#34d399,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.site-header p{color:var(--muted);margin-top:.4rem;font-size:.92rem}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;max-width:860px;margin:0 auto 1.5rem;padding:0 1rem;border-bottom:1px solid var(--border)}
+.tab{padding:.65rem 1.4rem;font-size:.88rem;font-weight:600;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px;user-select:none}
+.tab.active{color:var(--text);border-bottom-color:var(--blue)}
+.tab:hover:not(.active){color:var(--text)}
+
+.panel{display:none;max-width:860px;margin:0 auto;padding:0 1rem}
+.panel.active{display:block}
+
+/* ── SEARCH PANEL ── */
+.search-wrap{position:relative;margin-bottom:1.25rem}
+.search-wrap input{width:100%;padding:.85rem 1rem .85rem 2.8rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:1rem;outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:var(--blue)}
+.search-wrap input::placeholder{color:var(--muted)}
+.search-icon{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+
+.category-filters{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem}
+.cf-btn{padding:.35rem .85rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.cf-btn:hover{border-color:var(--text);color:var(--text)}
+.cf-btn.active{color:#fff}
+.cf-btn[data-c="all"].active{background:var(--purple);border-color:var(--purple)}
+.cf-btn[data-c="blue"].active{background:var(--blue);border-color:var(--blue)}
+.cf-btn[data-c="green"].active{background:var(--green);border-color:var(--green);color:#000}
+.cf-btn[data-c="amber"].active{background:var(--amber);border-color:var(--amber);color:#000}
+.cf-btn[data-c="brown"].active{background:var(--brown-light);border-color:var(--brown-light);color:#000}
+.cf-btn[data-c="red"].active{background:var(--red);border-color:var(--red)}
+.cf-btn[data-c="gray"].active{background:var(--gray);border-color:var(--gray)}
+
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem}
+.item-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.1rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.item-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px}
+.item-card[data-bin="blue"]::before{background:var(--blue)}
+.item-card[data-bin="green"]::before{background:var(--green)}
+.item-card[data-bin="amber"]::before{background:var(--amber)}
+.item-card[data-bin="brown"]::before{background:var(--brown-light)}
+.item-card[data-bin="red"]::before{background:var(--red)}
+.item-card[data-bin="gray"]::before{background:var(--gray)}
+.item-card:hover{border-color:var(--blue);transform:translateY(-1px)}
+.item-card .ic-top{display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem}
+.item-card .ic-emoji{font-size:1.4rem;line-height:1}
+.item-card .ic-name{font-size:.92rem;font-weight:600;color:var(--text)}
+.item-card .ic-bin{font-size:.72rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:.15rem .5rem;border-radius:20px}
+.item-card[data-bin="blue"] .ic-bin{background:var(--blue-bg);color:var(--blue-light)}
+.item-card[data-bin="green"] .ic-bin{background:var(--green-bg);color:var(--green-light)}
+.item-card[data-bin="amber"] .ic-bin{background:var(--amber-bg);color:var(--amber-light)}
+.item-card[data-bin="brown"] .ic-bin{background:var(--brown-bg);color:var(--brown-light)}
+.item-card[data-bin="red"] .ic-bin{background:var(--red-bg);color:var(--red-light)}
+.item-card[data-bin="gray"] .ic-bin{background:var(--gray-bg);color:var(--gray-light)}
+.item-card .ic-tip{font-size:.78rem;color:var(--muted);line-height:1.45;margin-top:.3rem}
+.no-results{text-align:center;padding:3rem;color:var(--muted)}
+
+/* ── DETAIL MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);max-width:480px;width:100%;padding:1.5rem;position:relative;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal-close{position:absolute;top:1rem;right:1rem;background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;line-height:1;padding:.2rem .4rem;border-radius:4px}
+.modal-close:hover{color:var(--text)}
+.modal-emoji{font-size:3rem;margin-bottom:.75rem;display:block}
+.modal-name{font-size:1.3rem;font-weight:700;margin-bottom:.3rem}
+.modal-bin-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .8rem;border-radius:20px;font-size:.8rem;font-weight:600;margin-bottom:1.1rem}
+.modal-section{margin-bottom:.9rem}
+.modal-section h4{font-size:.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.3rem}
+.modal-section p{font-size:.87rem;color:var(--text);line-height:1.55}
+.modal-tags{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem}
+.modal-tag{font-size:.75rem;padding:.2rem .55rem;border-radius:20px;background:var(--faint);color:var(--muted);border:1px solid var(--border)}
+
+/* ── GAME PANEL ── */
+.game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.game-stats{display:flex;gap:.75rem}
+.stat-pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:.35rem .9rem;font-size:.82rem;font-weight:600}
+.stat-pill span{color:var(--muted);font-weight:400;margin-right:.2rem}
+.btn-shuffle{background:transparent;border:1px solid var(--border);border-radius:var(--r-sm);padding:.4rem .9rem;color:var(--muted);font-size:.82rem;cursor:pointer;transition:all .2s}
+.btn-shuffle:hover{border-color:var(--text);color:var(--text)}
+
+.game-items{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1.5rem;min-height:80px;padding:.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.game-item{padding:.45rem .9rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:.88rem;cursor:grab;user-select:none;transition:all .2s;display:flex;align-items:center;gap:.4rem}
+.game-item:hover{border-color:var(--blue);transform:translateY(-2px)}
+.game-item.dragging{opacity:.4;cursor:grabbing}
+.game-item.correct{animation:popGreen .4s ease forwards}
+.game-item.wrong{animation:shake .35s ease}
+@keyframes popGreen{0%{transform:scale(1)}50%{transform:scale(1.15);background:#0d2d1a;border-color:#22c55e}100%{transform:scale(1);opacity:.4;pointer-events:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.bins-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem}
+@media(max-width:520px){.bins-row{grid-template-columns:repeat(2,1fr)}}
+.drop-bin{border:2px dashed var(--border);border-radius:var(--r);padding:1rem .75rem;min-height:120px;transition:all .2s;position:relative;text-align:center}
+.drop-bin .bin-label{font-size:.72rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:.3rem}
+.drop-bin .bin-icon{font-size:1.8rem;margin-bottom:.3rem;display:block}
+.drop-bin .bin-name{font-size:.82rem;font-weight:600}
+.drop-bin .bin-count{position:absolute;top:.5rem;right:.6rem;font-size:.7rem;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.drop-bin[data-bin="blue"]{border-color:rgba(59,130,246,.3);background:rgba(13,30,61,.3)}
+.drop-bin[data-bin="blue"] .bin-label,.drop-bin[data-bin="blue"] .bin-name{color:var(--blue-light)}
+.drop-bin[data-bin="blue"] .bin-count{background:var(--blue-bg);color:var(--blue-light)}
+.drop-bin[data-bin="green"]{border-color:rgba(34,197,94,.3);background:rgba(13,45,26,.3)}
+.drop-bin[data-bin="green"] .bin-label,.drop-bin[data-bin="green"] .bin-name{color:var(--green-light)}
+.drop-bin[data-bin="green"] .bin-count{background:var(--green-bg);color:var(--green-light)}
+.drop-bin[data-bin="amber"]{border-color:rgba(245,158,11,.3);background:rgba(45,31,6,.3)}
+.drop-bin[data-bin="amber"] .bin-label,.drop-bin[data-bin="amber"] .bin-name{color:var(--amber-light)}
+.drop-bin[data-bin="amber"] .bin-count{background:var(--amber-bg);color:var(--amber-light)}
+.drop-bin[data-bin="brown"]{border-color:rgba(161,98,7,.3);background:rgba(31,21,6,.3)}
+.drop-bin[data-bin="brown"] .bin-label,.drop-bin[data-bin="brown"] .bin-name{color:var(--brown-light)}
+.drop-bin[data-bin="brown"] .bin-count{background:var(--brown-bg);color:var(--brown-light)}
+.drop-bin[data-bin="red"]{border-color:rgba(239,68,68,.3);background:rgba(45,13,13,.3)}
+.drop-bin[data-bin="red"] .bin-label,.drop-bin[data-bin="red"] .bin-name{color:var(--red-light)}
+.drop-bin[data-bin="red"] .bin-count{background:var(--red-bg);color:var(--red-light)}
+.drop-bin[data-bin="gray"]{border-color:rgba(107,114,128,.3);background:rgba(24,24,27,.3)}
+.drop-bin[data-bin="gray"] .bin-label,.drop-bin[data-bin="gray"] .bin-name{color:var(--gray-light)}
+.drop-bin[data-bin="gray"] .bin-count{background:var(--gray-bg);color:var(--gray-light)}
+.drop-bin.drag-over{transform:scale(1.03);border-style:solid}
+.drop-bin[data-bin="blue"].drag-over{border-color:var(--blue);background:var(--blue-bg)}
+.drop-bin[data-bin="green"].drag-over{border-color:var(--green);background:var(--green-bg)}
+.drop-bin[data-bin="amber"].drag-over{border-color:var(--amber);background:var(--amber-bg)}
+.drop-bin[data-bin="brown"].drag-over{border-color:var(--brown-light);background:var(--brown-bg)}
+.drop-bin[data-bin="red"].drag-over{border-color:var(--red);background:var(--red-bg)}
+.drop-bin[data-bin="gray"].drag-over{border-color:var(--gray);background:var(--gray-bg)}
+
+.feedback-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:.6rem 1.4rem;border-radius:20px;font-size:.88rem;font-weight:600;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.feedback-toast.correct{background:#0d2d1a;color:#22c55e;border:1px solid #22c55e}
+.feedback-toast.wrong{background:#2d0d0d;color:#ef4444;border:1px solid #ef4444}
+.feedback-toast.show{opacity:1}
+
+.game-complete{display:none;text-align:center;padding:2.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-top:1rem}
+.game-complete.show{display:block}
+.game-complete h2{font-size:1.8rem;margin-bottom:.5rem}
+.game-complete p{color:var(--muted);margin-bottom:1.25rem}
+.btn-play-again{background:linear-gradient(135deg,#34d399,#60a5fa);border:none;border-radius:var(--r-sm);padding:.65rem 1.6rem;font-size:.95rem;font-weight:700;color:#0e1117;cursor:pointer;transition:opacity .2s}
+.btn-play-again:hover{opacity:.88}
+
+/* ── BIN GUIDE ── */
+.guide-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem}
+.guide-card{border-radius:var(--r);padding:1.1rem;border:1px solid transparent}
+.guide-card[data-bin="blue"]{background:var(--blue-bg);border-color:rgba(59,130,246,.25)}
+.guide-card[data-bin="green"]{background:var(--green-bg);border-color:rgba(34,197,94,.25)}
+.guide-card[data-bin="amber"]{background:var(--amber-bg);border-color:rgba(245,158,11,.25)}
+.guide-card[data-bin="brown"]{background:var(--brown-bg);border-color:rgba(161,98,7,.25)}
+.guide-card[data-bin="red"]{background:var(--red-bg);border-color:rgba(239,68,68,.25)}
+.guide-card[data-bin="gray"]{background:var(--gray-bg);border-color:rgba(107,114,128,.25)}
+.guide-card .gc-icon{font-size:2rem;margin-bottom:.5rem;display:block}
+.guide-card .gc-name{font-size:1rem;font-weight:700;margin-bottom:.2rem}
+.guide-card[data-bin="blue"] .gc-name{color:var(--blue-light)}
+.guide-card[data-bin="green"] .gc-name{color:var(--green-light)}
+.guide-card[data-bin="amber"] .gc-name{color:var(--amber-light)}
+.guide-card[data-bin="brown"] .gc-name{color:var(--brown-light)}
+.guide-card[data-bin="red"] .gc-name{color:var(--red-light)}
+.guide-card[data-bin="gray"] .gc-name{color:var(--gray-light)}
+.guide-card .gc-accepts{font-size:.78rem;color:var(--muted);line-height:1.55;margin-bottom:.6rem}
+.guide-card .gc-tip{font-size:.75rem;padding:.3rem .6rem;border-radius:var(--r-xs);background:rgba(255,255,255,.05);color:var(--muted);line-height:1.4}
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <h1>♻ Trash Sorter</h1>
+  <p>Search any waste item · Play the sorting game · No account or API key needed</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="search">🔍 Item Lookup</div>
+  <div class="tab" data-tab="game">🎮 Sorting Game</div>
+  <div class="tab" data-tab="guide">📋 Bin Guide</div>
+</div>
+
+<!-- ══ SEARCH PANEL ══ -->
+<div class="panel active" id="panel-search">
+  <div class="search-wrap">
+    <span class="search-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    </span>
+    <input type="text" id="searchInput" placeholder="Search: bottle, battery, banana peel, cardboard…" autocomplete="off">
+  </div>
+  <div class="category-filters">
+    <button class="cf-btn active" data-c="all">All bins</button>
+    <button class="cf-btn" data-c="blue">♻️ Blue</button>
+    <button class="cf-btn" data-c="green">🫙 Green</button>
+    <button class="cf-btn" data-c="amber">🧴 Amber</button>
+    <button class="cf-btn" data-c="brown">🌿 Brown</button>
+    <button class="cf-btn" data-c="red">☣️ Red</button>
+    <button class="cf-btn" data-c="gray">🗑️ Gray</button>
+  </div>
+  <div class="results-grid" id="resultsGrid"></div>
+</div>
+
+<!-- ══ GAME PANEL ══ -->
+<div class="panel" id="panel-game">
+  <div class="game-header">
+    <div class="game-stats">
+      <div class="stat-pill"><span>Score</span><span id="gScore">0</span></div>
+      <div class="stat-pill"><span>Left</span><span id="gLeft">0</span></div>
+      <div class="stat-pill"><span>Streak</span><span id="gStreak">0</span> 🔥</div>
+    </div>
+    <button class="btn-shuffle" id="btnShuffle">New round ↺</button>
+  </div>
+  <div class="game-items" id="gameItems"></div>
+  <div class="bins-row" id="binsRow"></div>
+  <div class="game-complete" id="gameComplete">
+    <div style="font-size:3rem;margin-bottom:.5rem" id="gcEmoji">🎉</div>
+    <h2 id="gcTitle">Round complete!</h2>
+    <p id="gcMsg">You sorted all items correctly.</p>
+    <button class="btn-play-again" id="btnPlayAgain">Play again</button>
+  </div>
+</div>
+
+<!-- ══ GUIDE PANEL ══ -->
+<div class="panel" id="panel-guide">
+  <div class="guide-grid" id="guideGrid"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <span class="modal-emoji" id="mEmoji"></span>
+    <div class="modal-name" id="mName"></div>
+    <div class="modal-bin-badge" id="mBadge"></div>
+    <div class="modal-section"><h4>Material</h4><p id="mMaterial"></p></div>
+    <div class="modal-section"><h4>How to prepare</h4><p id="mPrepare"></p></div>
+    <div class="modal-section"><h4>Why this bin</h4><p id="mWhy"></p></div>
+    <div class="modal-section"><h4>Similar items</h4><div class="modal-tags" id="mTags"></div></div>
+  </div>
+</div>
+
+<div class="feedback-toast" id="feedbackToast"></div>
+
+<script>
+const BINS = {
+  blue:  {name:'Blue Bin',  icon:'♻️', label:'Paper & Cardboard', color:'#3b82f6', accepts:'Newspapers, magazines, cardboard boxes, office paper, paper bags, egg cartons', tip:'Flatten boxes to save space. Remove food residue from pizza boxes.'},
+  green: {name:'Green Bin', icon:'🫙', label:'Glass',             color:'#22c55e', accepts:'Glass bottles, jars, containers (clear, brown, green glass)', tip:'Rinse containers. Remove metal lids separately (amber bin).'},
+  amber: {name:'Amber Bin', icon:'🧴', label:'Plastic & Metal',   color:'#f59e0b', accepts:'Plastic bottles/containers (types 1-2-5), aluminium cans, tin cans, aerosols', tip:'Rinse containers. Crush cans to save space. Remove caps.'},
+  brown: {name:'Brown Bin', icon:'🌿', label:'Organic / Compost', color:'#d97706', accepts:'Food scraps, fruit & veg peels, coffee grounds, tea bags, garden waste', tip:'Wrap wet waste in newspaper. No cooked meat in some regions.'},
+  red:   {name:'Red Bin',   icon:'☣️', label:'Hazardous',         color:'#ef4444', accepts:'Batteries, electronics, paint, chemicals, fluorescent bulbs, medicine', tip:'Never put in regular bins. Find a hazardous waste drop-off point.'},
+  gray:  {name:'Gray Bin',  icon:'🗑️', label:'General Waste',    color:'#6b7280', accepts:'Contaminated packaging, styrofoam, cling wrap, dirty nappies, broken ceramics', tip:'Last resort only. If in doubt, check the other bins first.'},
+};
+
+const ITEMS = [
+  {id:1,  name:'Newspaper',          emoji:'📰', bin:'blue',  material:'Newsprint paper',           prepare:'Keep dry. Remove any plastic wrapping.',                          why:'Clean paper is fully recyclable into new paper products.',          similar:['Magazine','Office paper','Paper bag','Flyer']},
+  {id:2,  name:'Cardboard box',      emoji:'📦', bin:'blue',  material:'Corrugated cardboard',      prepare:'Flatten and remove tape. No greasy food residue.',                why:'Cardboard is one of the most recycled materials globally.',         similar:['Egg carton','Cereal box','Shoeboxes','Paper tubes']},
+  {id:3,  name:'Magazine',           emoji:'📖', bin:'blue',  material:'Coated paper',              prepare:'Remove staples if possible. Keep dry.',                           why:'Coated paper is recyclable at most paper mills.',                   similar:['Newspaper','Catalogue','Brochure','Notebook']},
+  {id:4,  name:'Office paper',       emoji:'📄', bin:'blue',  material:'White paper',               prepare:'Remove paper clips and staples.',                                 why:'White office paper is high-quality recyclable fibre.',              similar:['Notebook','Envelope','Receipt (non-thermal)','Wrapping paper']},
+  {id:5,  name:'Paper bag',          emoji:'🛍️', bin:'blue',  material:'Kraft paper',              prepare:'Flatten. Remove handles if they are rope or plastic.',            why:'Paper bags are easily repulped at recycling facilities.',           similar:['Paper cup (dry)','Cardboard box','Paper wrapping']},
+  {id:6,  name:'Pizza box (clean)',  emoji:'🍕', bin:'blue',  material:'Cardboard',                 prepare:'Only recycle if there is no grease. Tear off dirty sections.',    why:'Clean sections of pizza boxes are recyclable cardboard.',           similar:['Takeaway box','Cardboard sleeve','Paper plate (clean)']},
+  {id:7,  name:'Pizza box (greasy)', emoji:'🍕', bin:'gray',  material:'Contaminated cardboard',   prepare:'Cannot be recycled due to grease contamination.',                 why:'Grease ruins the paper fibre recycling process.',                   similar:['Soiled napkins','Greasy wrappers','Dirty packaging']},
+  {id:8,  name:'Glass bottle',       emoji:'🍾', bin:'green', material:'Soda-lime glass',           prepare:'Rinse. Remove metal caps and put in amber bin.',                  why:'Glass is 100% recyclable without any quality loss.',               similar:['Wine bottle','Beer bottle','Glass jar','Glass container']},
+  {id:9,  name:'Glass jar',          emoji:'🫙', bin:'green', material:'Glass',                     prepare:'Rinse out food residue. Remove metal lid.',                       why:'Glass jars are infinitely recyclable.',                             similar:['Glass bottle','Pasta sauce jar','Jam jar']},
+  {id:10, name:'Broken glass',       emoji:'🪟', bin:'gray',  material:'Glass (unsafe)',            prepare:'Wrap in newspaper and tape securely before binning.',            why:'Broken glass is a safety hazard and cannot be sorted at facilities.',similar:['Broken mirror','Broken ceramic','Broken lightbulb']},
+  {id:11, name:'Plastic bottle',     emoji:'🧴', bin:'amber', material:'PET plastic (type 1)',      prepare:'Empty and rinse. Crush to save space. Replace cap.',              why:'PET plastic is one of the most widely recycled plastic types.',     similar:['Shampoo bottle','Detergent bottle','Juice bottle']},
+  {id:12, name:'Aluminium can',      emoji:'🥤', bin:'amber', material:'Aluminium',                 prepare:'Rinse. Crush if possible.',                                       why:'Aluminium recycling saves 95% of the energy vs. primary production.',similar:['Tin can','Steel can','Metal lid','Foil tray']},
+  {id:13, name:'Tin can',            emoji:'🥫', bin:'amber', material:'Steel/tin',                 prepare:'Rinse. Leave top partially attached or remove completely.',       why:'Steel cans are highly recyclable magnetic metals.',                 similar:['Aluminium can','Metal lid','Aerosol can (empty)']},
+  {id:14, name:'Styrofoam',          emoji:'📦', bin:'gray',  material:'Expanded polystyrene',     prepare:'Cannot be recycled in most curbside programs.',                   why:'Styrofoam is not accepted by standard recycling facilities.',       similar:['Cling wrap','Plastic bag','Soft plastic']},
+  {id:15, name:'Plastic bag',        emoji:'🛍️', bin:'gray',  material:'LDPE plastic (type 4)',    prepare:'Do not put in recycling — it jams sorting machines.',             why:'Soft plastics require specialist drop-off, not curbside recycling.', similar:['Cling wrap','Bubble wrap','Soft plastic packaging']},
+  {id:16, name:'Food scraps',        emoji:'🥦', bin:'brown', material:'Organic matter',            prepare:'Place loose or in compostable bag. Remove stickers from fruit.',  why:'Food waste produces methane in landfill; composting returns nutrients.',similar:['Fruit peel','Vegetable trimmings','Eggshell','Coffee grounds']},
+  {id:17, name:'Banana peel',        emoji:'🍌', bin:'brown', material:'Organic / compostable',     prepare:'No preparation needed. Goes straight in.',                        why:'Fruit peels break down rapidly and enrich compost.',               similar:['Orange peel','Apple core','Vegetable scraps','Tea bag']},
+  {id:18, name:'Coffee grounds',     emoji:'☕', bin:'brown', material:'Organic matter',            prepare:'Can go in with the paper filter.',                                why:'Coffee grounds are a nutrient-rich compost material.',              similar:['Tea bag','Food scraps','Fruit peel','Garden clippings']},
+  {id:19, name:'Garden clippings',   emoji:'🌿', bin:'brown', material:'Green organic waste',       prepare:'Chop into smaller pieces for faster breakdown.',                  why:'Garden waste composts into valuable mulch and soil improver.',      similar:['Leaves','Grass clippings','Small branches','Food scraps']},
+  {id:20, name:'Battery',            emoji:'🔋', bin:'red',   material:'Lithium/alkaline chemicals',prepare:'Do not put in any regular bin. Tape terminals of lithium cells.','why':'Batteries contain toxic heavy metals that contaminate soil and water.',similar:['Phone battery','AA battery','Rechargeable battery','Button cell']},
+  {id:21, name:'Mobile phone',       emoji:'📱', bin:'red',   material:'E-waste (mixed)',           prepare:'Back up and wipe data. Remove SIM card.',                         why:'Phones contain valuable rare metals and hazardous substances.',     similar:['Laptop','Tablet','Camera','Earphones']},
+  {id:22, name:'Fluorescent bulb',   emoji:'💡', bin:'red',   material:'Glass + mercury vapour',   prepare:'Handle carefully. Do not break. Take to hazardous waste point.',  why:'Contains mercury — a toxic substance banned from landfill.',        similar:['CFL bulb','Thermometer','Paint tin','Cleaning chemical']},
+  {id:23, name:'Paint tin',          emoji:'🪣', bin:'red',   material:'Metal + chemical waste',   prepare:'Let leftover paint dry out before disposal, or donate it.',       why:'Liquid paint is classified as hazardous household waste.',          similar:['Aerosol paint','Solvent','Motor oil','Cleaning chemical']},
+  {id:24, name:'Medicine',           emoji:'💊', bin:'red',   material:'Pharmaceutical waste',      prepare:'Return to pharmacy. Never flush down the drain.',                 why:'Medicines contaminate waterways and must be safely destroyed.',     similar:['Syringes','Medical devices','Chemical reagent']},
+  {id:25, name:'Nappy (diaper)',     emoji:'👶', bin:'gray',  material:'Mixed / contaminated',     prepare:'Wrap securely before binning.',                                   why:'Mixed materials and contamination make nappies non-recyclable.',    similar:['Sanitary products','Wet wipes','Cotton wool']},
+  {id:26, name:'Wet wipes',          emoji:'🧻', bin:'gray',  material:'Synthetic fibre blend',    prepare:'Never flush. Bin directly.',                                      why:'Wet wipes contain plastic fibres and are not biodegradable.',       similar:['Nappy','Cotton pads','Tissue (used)']},
+  {id:27, name:'Egg carton',         emoji:'🥚', bin:'blue',  material:'Moulded paper pulp',       prepare:'Flatten if possible. Must be clean and dry.',                     why:'Egg cartons are made from recycled paper and are recyclable.',      similar:['Cardboard box','Paper bag','Tissue box']},
+  {id:28, name:'Aerosol can (empty)',emoji:'💈', bin:'amber', material:'Steel/aluminium',           prepare:'Must be completely empty. Never puncture.',                       why:'Empty aerosol cans are recyclable metal — the propellant is gone.', similar:['Tin can','Aluminium can','Metal lid']},
+  {id:29, name:'Cooking oil',        emoji:'🫙', bin:'gray',  material:'Liquid organic / fat',     prepare:'Never pour down drain. Seal in a container. Some councils collect it.',why:'Oil solidifies in pipes and is not accepted in food waste bins.', similar:['Paint tin','Chemical liquid','Food scraps (if solid)']},
+  {id:30, name:'Milk carton',        emoji:'🥛', bin:'blue',  material:'Tetra Pak (paper-lined)',  prepare:'Rinse. Flatten. Most facilities accept these now.',                why:'Tetra Pak cartons are processed at specialist paper mills.',        similar:['Juice carton','Paper cup','Cardboard box']},
+  {id:31, name:'Plastic cup',        emoji:'🥤', bin:'amber', material:'Polypropylene (PP5)',       prepare:'Rinse. Remove any straws.',                                       why:'Rigid plastic cups (PP5) are accepted in most plastic recycling.',  similar:['Plastic container','Plastic bottle','Yoghurt pot']},
+  {id:32, name:'Yoghurt pot',        emoji:'🍶', bin:'amber', material:'Polypropylene plastic',    prepare:'Rinse. Foil lids go in amber bin too.',                           why:'PP plastic tubs and lids are recyclable in most programs.',         similar:['Plastic cup','Margarine tub','Plastic container']},
+  {id:33, name:'Cling wrap',         emoji:'🫙', bin:'gray',  material:'LDPE soft plastic',        prepare:'Cannot go in curbside recycling. Specialist drop-off needed.',    why:'Soft plastics jam sorting machinery at recycling facilities.',       similar:['Plastic bag','Bubble wrap','Soft plastic sleeve']},
+  {id:34, name:'Teabag',             emoji:'🍵', bin:'brown', material:'Organic + paper',          prepare:'Most teabags are compostable. Avoid plastic-sealed bags.',        why:'Natural teabags break down well in compost.',                       similar:['Coffee grounds','Food scraps','Paper filter']},
+  {id:35, name:'Newspaper (wet)',    emoji:'📰', bin:'gray',  material:'Contaminated paper',       prepare:'Wet or heavily soiled paper cannot be recycled.',                 why:'Moisture degrades the paper fibre and ruins the recycling batch.',   similar:['Greasy pizza box','Soiled napkin','Wet cardboard']},
+  {id:36, name:'Motor oil bottle',   emoji:'🛢️', bin:'red',   material:'Plastic + chemical residue',prepare:'Take to a garage or hazardous waste collection point.',         why:'Oil residue makes this a hazardous item regardless of the plastic shell.',similar:['Paint tin','Chemical bottle','Battery']},
+];
+
+let searchFilter = 'all';
+let dragItem = null;
+let score = 0, streak = 0, gameItems = [], binCounts = {};
+
+function binStyle(bin){
+  const c={blue:'var(--blue-light)',green:'var(--green-light)',amber:'var(--amber-light)',brown:'var(--brown-light)',red:'var(--red-light)',gray:'var(--gray-light)'};
+  const b={blue:'var(--blue-bg)',green:'var(--green-bg)',amber:'var(--amber-bg)',brown:'var(--brown-bg)',red:'var(--red-bg)',gray:'var(--gray-bg)'};
+  return `background:${b[bin]};color:${c[bin]}`;
+}
+
+/* ── SEARCH ── */
+function renderSearch(){
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const grid = document.getElementById('resultsGrid');
+  const filtered = ITEMS.filter(item => {
+    const matchBin = searchFilter === 'all' || item.bin === searchFilter;
+    const matchQ = !q || item.name.toLowerCase().includes(q) || item.similar.some(s=>s.toLowerCase().includes(q)) || BINS[item.bin].label.toLowerCase().includes(q);
+    return matchBin && matchQ;
+  });
+  if(!filtered.length){
+    grid.innerHTML = `<div class="no-results" style="grid-column:1/-1"><p style="font-size:2rem">🤷</p><p style="margin-top:.5rem">No items found for "<strong>${q}</strong>"</p><p style="margin-top:.3rem;font-size:.8rem">Try: bottle, battery, glass, cardboard…</p></div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(item => `
+    <div class="item-card" data-bin="${item.bin}" data-id="${item.id}" onclick="openModal(${item.id})">
+      <div class="ic-top">
+        <span class="ic-emoji">${item.emoji}</span>
+        <div>
+          <div class="ic-name">${item.name}</div>
+          <span class="ic-bin">${BINS[item.bin].icon} ${BINS[item.bin].label}</span>
+        </div>
+      </div>
+      <div class="ic-tip">${item.prepare}</div>
+    </div>`).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', renderSearch);
+document.querySelectorAll('.cf-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    searchFilter = btn.dataset.c;
+    renderSearch();
+  });
+});
+renderSearch();
+
+/* ── MODAL ── */
+function openModal(id){
+  const item = ITEMS.find(i => i.id === id);
+  if(!item) return;
+  const bin = BINS[item.bin];
+  document.getElementById('mEmoji').textContent = item.emoji;
+  document.getElementById('mName').textContent = item.name;
+  const badge = document.getElementById('mBadge');
+  badge.textContent = `${bin.icon} ${bin.name} — ${bin.label}`;
+  badge.setAttribute('style', binStyle(item.bin)+';border-radius:20px;padding:.3rem .8rem;font-size:.8rem;font-weight:600');
+  document.getElementById('mMaterial').textContent = item.material;
+  document.getElementById('mPrepare').textContent = item.prepare;
+  document.getElementById('mWhy').textContent = item.why;
+  document.getElementById('mTags').innerHTML = item.similar.map(s=>`<span class="modal-tag">${s}</span>`).join('');
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+document.getElementById('modalClose').onclick = () => document.getElementById('modalOverlay').classList.remove('open');
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
+
+/* ── GAME ── */
+function shuffle(arr){return arr.sort(()=>Math.random()-.5)}
+
+function startGame(){
+  score = 0; streak = 0; binCounts = {blue:0,green:0,amber:0,brown:0,red:0,gray:0};
+  gameItems = shuffle([...ITEMS]).slice(0, 12);
+  document.getElementById('gameComplete').classList.remove('show');
+  updateStats();
+  renderGameItems();
+  renderBins();
+}
+
+function updateStats(){
+  document.getElementById('gScore').textContent = score;
+  document.getElementById('gLeft').textContent = gameItems.filter(i=>!i._sorted).length;
+  document.getElementById('gStreak').textContent = streak;
+}
+
+function renderGameItems(){
+  const container = document.getElementById('gameItems');
+  container.innerHTML = gameItems.filter(i=>!i._sorted).map(item=>`
+    <div class="game-item" draggable="true" data-id="${item.id}"
+      ondragstart="onDragStart(event,${item.id})"
+      ondragend="onDragEnd(event)">
+      ${item.emoji} ${item.name}
+    </div>`).join('');
+  if(!container.innerHTML.trim()) container.innerHTML = `<p style="color:var(--muted);font-size:.85rem;padding:.5rem">All items sorted!</p>`;
+}
+
+function renderBins(){
+  document.getElementById('binsRow').innerHTML = Object.entries(BINS).map(([key,bin])=>`
+    <div class="drop-bin" data-bin="${key}"
+      ondragover="onDragOver(event)"
+      ondragleave="onDragLeave(event)"
+      ondrop="onDrop(event,'${key}')">
+      <span class="bin-count">${binCounts[key]||0}</span>
+      <span class="bin-icon">${bin.icon}</span>
+      <div class="bin-label">${bin.label}</div>
+      <div class="bin-name">${bin.name}</div>
+    </div>`).join('');
+}
+
+function onDragStart(e, id){
+  dragItem = id;
+  setTimeout(()=>{ const el = document.querySelector(`.game-item[data-id="${id}"]`); if(el) el.classList.add('dragging'); }, 0);
+}
+
+function onDragEnd(e){
+  document.querySelectorAll('.game-item').forEach(el => el.classList.remove('dragging'));
+}
+
+function onDragOver(e){
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onDragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onDrop(e, bin){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(!dragItem) return;
+  const item = gameItems.find(i => i.id === dragItem);
+  if(!item || item._sorted) return;
+
+  if(item.bin === bin){
+    item._sorted = true;
+    score += 10 + (streak >= 3 ? 5 : 0);
+    streak++;
+    binCounts[bin] = (binCounts[bin]||0)+1;
+    const el = document.querySelector(`.game-item[data-id="${dragItem}"]`);
+    if(el){ el.classList.add('correct'); setTimeout(()=>el.remove(), 420); }
+    showToast(`✓ Correct! ${streak>=3?' 🔥 Streak +5':''}`, 'correct');
+  } else {
+    streak = 0;
+    const el = document.querySelector(`.game-item[data-id="${dragItem}"]`);
+    if(el) el.classList.add('wrong');
+    setTimeout(()=>{ const el2 = document.querySelector(`.game-item[data-id="${dragItem}"]`); if(el2) el2.classList.remove('wrong'); }, 400);
+    showToast(`✗ Goes in the ${BINS[item.bin].name}`, 'wrong');
+  }
+
+  dragItem = null;
+  setTimeout(()=>{
+    updateStats();
+    renderBins();
+    const remaining = gameItems.filter(i=>!i._sorted);
+    if(remaining.length === 0) endGame();
+  }, 450);
+}
+
+function showToast(msg, type){
+  const t = document.getElementById('feedbackToast');
+  t.textContent = msg;
+  t.className = `feedback-toast ${type} show`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>{ t.classList.remove('show'); }, 1800);
+}
+
+function endGame(){
+  const pct = Math.round((score / (gameItems.length * 10)) * 100);
+  const gc = document.getElementById('gameComplete');
+  gc.classList.add('show');
+  document.getElementById('gcEmoji').textContent = pct >= 80 ? '🏆' : pct >= 50 ? '👍' : '💪';
+  document.getElementById('gcTitle').textContent = pct >= 80 ? 'Excellent sorting!' : pct >= 50 ? 'Good effort!' : 'Keep practising!';
+  document.getElementById('gcMsg').textContent = `You scored ${score} points. ${pct >= 80 ? 'You know your bins!' : 'Review the Bin Guide tab to learn more.'}`;
+}
+
+document.getElementById('btnShuffle').addEventListener('click', startGame);
+document.getElementById('btnPlayAgain').addEventListener('click', startGame);
+
+/* ── GUIDE ── */
+document.getElementById('guideGrid').innerHTML = Object.entries(BINS).map(([key,bin])=>`
+  <div class="guide-card" data-bin="${key}">
+    <span class="gc-icon">${bin.icon}</span>
+    <div class="gc-name">${bin.name}</div>
+    <div class="gc-accepts" style="font-size:.76rem;font-weight:600;margin-bottom:.3rem;color:var(--muted);letter-spacing:.3px;text-transform:uppercase">${bin.label}</div>
+    <div class="gc-accepts">${bin.accepts}</div>
+    <div class="gc-tip">💡 ${bin.tip}</div>
+  </div>`).join('');
+
+/* ── TABS ── */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab,.panel').forEach(el => el.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab === 'game' && gameItems.length === 0) startGame();
+  });
+});
+
+startGame();
+</script>
+</body>
+</html>
